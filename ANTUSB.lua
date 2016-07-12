@@ -292,8 +292,8 @@ local message_codes = {
 -- Wireshark dissector code
 
 -- Create the fields exhibited by the protocol.
-p_usbant.fields.sync     = ProtoField.uint8("usbant.msgsync", "Sync BYTE", base.HEX_DEC)
-p_usbant.fields.msglength= ProtoField.uint8("usbant.msglen", "Message Length", base.DEC)
+p_usbant.fields.sync     = ProtoField.uint8("usbant.msgsync", "Sync BYTE", base.HEX)
+p_usbant.fields.msglength= ProtoField.uint8("usbant.msglen", "Message Length", base.HEX)
 p_usbant.fields.msgid    = ProtoField.uint8("usbant.msgid", "Message Id", base.HEX_DEC, id, nil, "Message  ID")
 p_usbant.fields.msgdata1 = ProtoField.uint8("usbant.msgdata1", "Message Data 1", base.HEX)
 p_usbant.fields.msgdata2 = ProtoField.uint8("usbant.msgdata2", "Message Data 2", base.HEX)
@@ -373,16 +373,15 @@ end
 -- pinfo info field on top frame
 -- tree ont ANT protcol analysis central frame
 local function dissect_command(range, pinfo, tree)
-    local subtree = tree:add(p_usbant, range(), "ANT")
 
     -- assign to command first part N-1 packets to exclude checksum on analysis
     local command = range(0,range:len()-1) 
     
     -- add to tree first Byte with fix value 0xA4
-    tree:add_le(p_usbant.fields.sync, command(0,1))
+    tree:add(p_usbant.fields.sync, command(0,1))
 
     -- add to tree second Byte it contain message packet count
-    tree:add_le(p_usbant.fields.msglength, command(1,1))
+    tree:add(p_usbant.fields.msglength, command(1,1))
     -- n_msg_len=command(1,1):le_uint()
 
     if command:len() >= 2 then
@@ -450,7 +449,6 @@ function p_usbant.dissector(tvb, pinfo, tree)
             -- pinfo.cols.protocol = p_usbant.name
             pinfo.cols.protocol = "ANT"
             local subtree = tree:add(p_usbant, tvb(), "ANT")
-            subtree:add(p_usbant.fields.msgtype, endpoint):set_generated()
             return dissect_command(tvb, pinfo, subtree)
     end
     return 0
