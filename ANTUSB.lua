@@ -415,7 +415,7 @@ local function dissect_command(range, pinfo, tree)
     end
 
     if command:len() > 7 then
-    tree:add_le(p_usbant.fields.msgdata6, command(7,1))
+    tree:add_le(p_usbant.fields.msgdata5, command(7,1))
     tree:add_le(command(7,1), "   Data packet 5: " .. data_packet(5,msg_id),"")
     end
 
