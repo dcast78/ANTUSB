@@ -316,6 +316,7 @@ local f_urb_type = Field.new("usb.urb_type")
 local f_transfer_type = Field.new("usb.transfer_type")
 local f_endpoint = Field.new("usb.endpoint_number.endpoint")
 
+
 -- Insert warning for undecoded leftover data.
 local function warn_undecoded(tree, range)
     local item = tree:add(p_usbant.fields.unknown, range)
@@ -382,7 +383,7 @@ local function dissect_command(range, pinfo, tree)
 
     -- add to tree second Byte it contain message packet count
     tree:add(p_usbant.fields.msglength, command(1,1))
-    -- n_msg_len=command(1,1):le_uint()
+    n_msg_len=command(1,1):le_uint()
 
     if command:len() >= 2 then
     tree:add_le(p_usbant.fields.msgid, command(2,1))
@@ -434,7 +435,22 @@ local function dissect_command(range, pinfo, tree)
     tree:add_le(command(10,1), "   Data packet 8: " .. data_packet(8,msg_id),"")
     end
 
-    checksum(tree, range(2))
+    --checksum(tree, range(n_msg_len+3,1))
+    local bxor = bit.bxor
+    xor_chksum=0
+    for x=0,n_msg_len+2 do 
+        xor_chksum=bxor(xor_chksum,tonumber(string.format("%02X",command(x,1):le_uint()),16)) 
+	if x==n_msg_len+2 then
+       	    if string.format("%02X",range(n_msg_len+3,1):le_uint()) == string.format("%02X",xor_chksum)  then
+	        tree:add_le(p_usbant.fields.checksum, range(n_msg_len+3,1))
+	        tree:add_le(range(n_msg_len+3,1) , " XOR Checksum correct " .. string.format("%02X",xor_chksum))
+            else
+	        tree:add_le(p_usbant.fields.checksum, range(n_msg_len+3,1))
+       	        tree:add_le(string.format("%02X",range(n_msg_len+3,1):le_uint()), " XOR Checksum incorrect, checksum of received data = " .. string.format("%02X",xor_chksum))
+                pinfo.cols.info:append(" " ..  "XOR Checksum incorrect")
+            end
+        end
+    end
     return 2
 end
 
