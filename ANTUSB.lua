@@ -434,6 +434,11 @@ local function dissect_command(range, pinfo, tree)
     tree:add_le(p_usbant.fields.msgdata8, command(10,1))
     tree:add_le(command(10,1), "   Data packet 8: " .. data_packet(8,msg_id),"")
     end
+    
+    if command:len() > 11 then
+    tree:add_le(p_usbant.fields.msgdata9, command(11,1))
+    tree:add_le(command(11,1), "   Data packet 9: " .. data_packet(9,msg_id),"")
+    end
 
     --checksum(tree, range(n_msg_len+3,1))
     local bxor = bit.bxor
